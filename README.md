@@ -2,7 +2,7 @@
 
 <p align="center">
   <img
-    src="https://linpengteng.github.io/resource/dompet-app/design.png"
+    src="assets/images/final.png"
     alt="Dompet App Design"
     width="99%"
   />
