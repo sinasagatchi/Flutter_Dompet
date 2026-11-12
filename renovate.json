@@ -1,0 +1,23 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "group:allNonMajor",
+    ":semanticCommitTypeAll(chore)"
+  ],
+  "packageRules": [
+    {
+      "groupName": "com.android.application",
+      "matchPackageNames": [
+        "/com.android.application/"
+      ]
+    }
+  ],
+  "schedule": [
+    "at 10:00 am on friday"
+  ],
+  "npm": {
+    "commitMessageTopic": "{{prettyDepType}} {{depName}}"
+  },
+  "rangeStrategy": "bump"
+}

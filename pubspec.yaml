@@ -1,0 +1,106 @@
+name: dompet
+description: "A Dompet App by Flutter (Template)"
+publish_to: 'none'
+version: 1.0.1+1
+
+
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  flutter_localizations:
+    sdk: flutter
+
+  get: ^5.0.0-release-candidate-9.3.2
+  internet_connection_checker_plus: ^2.9.1
+  flutter_inappwebview: ^6.2.0-beta.2
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.7
+  responsive_framework: ^1.5.1
+  permission_handler: ^12.0.1
+  web_socket_channel: ^3.0.3
+  connectivity_plus: ^7.0.0
+  cupertino_icons: ^1.0.8
+  mobile_scanner: ^7.1.3
+  auto_size_text: ^3.0.0
+  google_sign_in: ^7.2.0
+  firebase_core: ^4.2.1
+  firebase_auth: ^6.1.2
+  quick_actions: ^1.1.0
+  path_provider: ^2.1.5
+  synchronized: ^3.4.0
+  fluttertoast: ^9.0.0
+  google_fonts: ^6.3.3
+  url_launcher: ^6.3.2
+  image_picker: ^1.2.1
+  audioplayers: ^6.5.1
+  get_storage: ^2.1.1
+  share_plus: ^12.0.1
+  app_links: ^7.0.0
+  fl_chart: ^1.1.1
+  signals: ^6.3.0
+  sqflite: ^2.4.2
+  convert: ^3.1.2
+  encrypt: ^5.0.3
+  crypto: ^3.0.7
+  logger: ^2.6.2
+  intl: ^0.20.2
+  http: ^1.6.0
+  path: ^1.9.1
+  dio: ^5.9.0
+
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - lib/assets/images/notification/
+    - lib/assets/images/settings/
+    - lib/assets/images/operater/
+    - lib/assets/images/profile/
+    - lib/assets/images/scanner/
+    - lib/assets/images/tabbar/
+    - lib/assets/images/payer/
+    - lib/assets/images/home/
+    - lib/assets/images/auth/
+    - lib/assets/images/card/
+    - lib/assets/webview/
+    - lib/assets/scripts/
+    - lib/assets/medias/
+    - lib/assets/langs/
+
+  fonts:
+    - family: PingFang
+      fonts:
+        - asset: lib/assets/fonts/PingFang.ttf
+
+
+flutter_native_splash:
+  color: "#ffffff"
+  image: assets/dompet_splash.png
+
+  android_12:
+    color: "#ffffff"
+    image: assets/dompet_splash.png
+
+  fullscreen: true
+  web: false
+
+
+flutter_launcher_icons:
+  image_path: "assets/dompet_large.png"
+  adaptive_icon_background: "#ffffff"
+  background_color_ios: "#ffffff"
+  remove_alpha_ios: true
+  android: false
+  ios: true

@@ -1,0 +1,710 @@
+import 'dart:math';
+import 'package:get/get.dart';
+import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:auto_size_text/auto_size_text.dart';
+export 'package:dompet/pages/stats/controller.dart';
+import 'package:dompet/pages/stats/controller.dart';
+import 'package:dompet/routes/navigator.dart';
+import 'package:dompet/extension/money.dart';
+import 'package:dompet/extension/date.dart';
+import 'package:dompet/extension/size.dart';
+
+class PageStats extends GetView<PageStatsController> {
+  const PageStats({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Obx(() {
+        final isPortrait = controller.isPortrait;
+        final mediaPadding = controller.mediaPadding.value;
+        final mediaBottom = max(mediaPadding.bottom, 30.vp);
+
+        final bottom = isPortrait.value ? mediaBottom + 92.vp : 0.0;
+        final width = isPortrait.value ? 640.wmax : 100.vw;
+
+        return Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+            width: width,
+            height: 100.vh,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                ListView(
+                  padding: EdgeInsets.only(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: bottom,
+                  ),
+                  physics: const ClampingScrollPhysics(),
+                  controller: controller.scrollController,
+                  children: [
+                    buildYearBalance(context),
+                    buildTransactions(context),
+                  ],
+                ),
+                buildTitleHeader(context),
+                buildBottomTabbar(context),
+              ],
+            ),
+          ),
+        );
+      }),
+      resizeToAvoidBottomInset: false,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+    );
+  }
+
+  Widget buildTitleHeader(BuildContext context) {
+    return Obx(() {
+      final bankCard = controller.bankCard;
+      final isPortrait = controller.isPortrait;
+      final isShowTopBar = controller.isShowTopBar;
+      final mediaPadding = controller.mediaPadding;
+      final mediaTop = mediaPadding.value.top;
+      final balance = bankCard.balance.value;
+
+      if (!isPortrait.value) {
+        return const SizedBox.shrink();
+      }
+
+      return Positioned(
+        top: 0,
+        left: 0,
+        child: AnimatedOpacity(
+          duration: Duration(milliseconds: 300),
+          opacity: isShowTopBar.value ? 1.0 : 0.0,
+          child: Container(
+            width: 640.wmax,
+            height: max(88.vp, mediaTop + 56.vp),
+            alignment: Alignment.center,
+            padding: EdgeInsets.only(
+              top: max(32.vp, mediaTop),
+              left: 32.vp,
+              right: 32.vp,
+            ),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.shadow.withValues(alpha: .038),
+                  offset: const Offset(0, 1.2),
+                  spreadRadius: 0,
+                  blurRadius: 10,
+                ),
+              ],
+            ),
+            child: SizedBox(
+              height: 56.vp,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(right: 10.vp),
+                    child: Text(
+                      'Balance'.tr,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.2,
+                        fontSize: 20.fp,
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: AutoSizeText(
+                      balance.usd2,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 25.fp,
+                      ),
+                      textAlign: TextAlign.right,
+                      minFontSize: (15.vp).floor() * 1.0,
+                      maxFontSize: (26.vp).floor() * 1.0,
+                      stepGranularity: max((1.vp).floor() * 1.0, 1),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget buildTransactions(BuildContext context) {
+    final bankCard = controller.bankCard;
+    final loginUser = controller.loginUser;
+    final isPortrait = controller.isPortrait;
+    final userAvatar = loginUser.avatar.value;
+    final bankOrders = controller.bankOrders;
+    final rawOrders = bankOrders.list.value;
+    final balance = bankCard.balance.value;
+
+    if (!isPortrait.value) {
+      return const SizedBox.shrink();
+    }
+
+    Widget buildIconAvatar(String icon) {
+      if (icon == 'me' && userAvatar != null) {
+        return ClipOval(
+          child: Image.memory(
+            userAvatar,
+            width: 39.vp,
+            height: 39.vp,
+            fit: BoxFit.fill,
+          ),
+        );
+      }
+
+      return ClipOval(
+        child: Image.asset(
+          'lib/assets/images/payer/$icon.png',
+          width: 39.vp,
+          height: 39.vp,
+          fit: BoxFit.fill,
+        ),
+      );
+    }
+
+    return Container(
+      padding: EdgeInsets.only(left: 32.vp, right: 32.vp),
+      margin: EdgeInsets.only(top: 50.vp, bottom: 15.vp),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 20.vp,
+            alignment: Alignment.center,
+            margin: EdgeInsets.only(bottom: 16.vp),
+            child: Text(
+              'Balance'.tr,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+                fontSize: 16.fp,
+              ),
+            ),
+          ),
+          Container(
+            height: 44.vp,
+            alignment: Alignment.center,
+            margin: EdgeInsets.only(bottom: 42.vp),
+            child: AutoSizeText(
+              balance.USD,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 36.fp,
+              ),
+              minFontSize: (24.vp).floor() * 1.0,
+              maxFontSize: (36.vp).floor() * 1.0,
+              stepGranularity: max((1.vp).floor() * 1.0, 1),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ),
+          Container(
+            width: 640.wmax,
+            height: 21.vp,
+            margin: EdgeInsets.only(left: 2.vp, right: 2.vp, bottom: 25.vp),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  'Transactions'.tr,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.35,
+                    fontSize: 18.fp,
+                    height: 1,
+                  ),
+                ),
+                Text(
+                  'Money'.tr,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14.fp,
+                    height: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ListView.separated(
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            itemCount: rawOrders.length,
+            physics: const NeverScrollableScrollPhysics(),
+            itemBuilder: (BuildContext context, int index) {
+              final order = rawOrders[index];
+
+              return SizedBox(
+                height: 39.vp,
+                child: Row(
+                  children: [
+                    buildIconAvatar(order.icon),
+                    SizedBox(width: 15.vp),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            height: 19.vp,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  order.name.tr,
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16.fp,
+                                  ),
+                                ),
+                                Text(
+                                  order.money.usd,
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: -0.6,
+                                    fontSize: 16.fp,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 2.vp),
+                          SizedBox(
+                            height: 18.vp,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  order.type.tr,
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14.fp,
+                                  ),
+                                ),
+                                Text(
+                                  order.date.yMMMd(),
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12.fp,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+            separatorBuilder: (BuildContext context, int index) {
+              return SizedBox(height: 21.vp);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildBottomTabbar(BuildContext context) {
+    final isPortrait = controller.isPortrait;
+    final mediaPadding = controller.mediaPadding.value;
+    final mediaBottom = max(mediaPadding.bottom, 30.vp);
+
+    if (!isPortrait.value) {
+      return const SizedBox.shrink();
+    }
+
+    return Positioned(
+      left: 0,
+      bottom: 0,
+      child: Container(
+        width: 640.wmax,
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.88),
+        height: mediaBottom + 92.vp,
+        alignment: Alignment.topCenter,
+        padding: EdgeInsets.only(
+          top: 10.vp,
+          left: 24.vp,
+          right: 24.vp,
+          bottom: mediaBottom,
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Positioned(
+              top: 32.vp,
+              left: 24.vp,
+              child: Image.asset(
+                'lib/assets/images/tabbar/bg.png',
+                width: 280.vp,
+                height: 52.vp,
+                fit: BoxFit.fill,
+              ),
+            ),
+            Align(
+              alignment: Alignment.topLeft,
+              child: Container(
+                height: 78.vp,
+                padding: EdgeInsets.only(
+                  top: 25.vp,
+                  left: 40.vp,
+                  right: 40.vp,
+                  bottom: 25.vp,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  borderRadius: BorderRadius.circular(30.vp),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.shadow.withValues(alpha: 0.1),
+                      offset: const Offset(0, 8),
+                      spreadRadius: 0,
+                      blurRadius: 12,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => GetNavigate.offNamedUntil(GetRoutes.home),
+                      child: Image.asset(
+                        'lib/assets/images/tabbar/home.png',
+                        width: 28.vp,
+                        height: 28.vp,
+                        fit: BoxFit.fill,
+                      ),
+                    ),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => {},
+                      child: Image.asset(
+                        'lib/assets/images/tabbar/chart_select.png',
+                        width: 28.vp,
+                        height: 28.vp,
+                        fit: BoxFit.fill,
+                      ),
+                    ),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => GetNavigate.toNamed(GetRoutes.notification),
+                      child: Image.asset(
+                        'lib/assets/images/tabbar/notification.png',
+                        width: 28.vp,
+                        height: 28.vp,
+                        fit: BoxFit.fill,
+                      ),
+                    ),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => GetNavigate.toNamed(GetRoutes.settings),
+                      child: Image.asset(
+                        'lib/assets/images/tabbar/settings.png',
+                        width: 28.vp,
+                        height: 28.vp,
+                        fit: BoxFit.fill,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildYearBalance(BuildContext context) {
+    double top = 0.0;
+    double left = 0.0;
+    double right = 0.0;
+    double width = 0.0;
+    double height = 0.0;
+    double bottom = 0.0;
+
+    final isPortrait = controller.isPortrait;
+    final mediaPadding = controller.mediaPadding;
+
+    if (!isPortrait.value) {
+      top = 10.vp;
+      left = max(15.vp, mediaPadding.value.left);
+      right = max(15.vp, mediaPadding.value.top);
+      width = 100.vw;
+      height = 100.vh;
+      bottom = 20.vp;
+    }
+
+    if (isPortrait.value) {
+      top = max(30.vp, mediaPadding.value.top + 10.vp);
+      left = 25.vp;
+      right = 25.vp;
+      width = 100.vw;
+      height = 165.vp + top;
+      bottom = 0.0;
+    }
+
+    return Container(
+      width: width,
+      height: height,
+      padding: EdgeInsets.only(
+        top: top,
+        left: left,
+        right: right,
+        bottom: bottom,
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned(
+            top: 10.vp,
+            left: 3.vp,
+            child: Container(
+              height: 22.vp,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Balance'.tr,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18.fp,
+                ),
+              ),
+            ),
+          ),
+          buildBalanceChart(context),
+        ],
+      ),
+    );
+  }
+
+  Widget buildBalanceChart(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final List<FlSpot> spots = [];
+
+    final years = controller.years;
+    final moneys = controller.moneys;
+    final showings = controller.showings;
+    final minMoney = controller.minMoney;
+    final maxMoney = controller.maxMoney;
+
+    final minX = 0.0;
+    final minY = minMoney.value;
+    final maxY = maxMoney.value;
+    final maxX = years.value.length - 1.0;
+
+    final endColor = colorScheme.primary.withValues(alpha: 60 / 255);
+    final beginColor = colorScheme.primary.withValues(alpha: 120 / 255);
+    final colorTweener = ColorTween(begin: beginColor, end: endColor);
+    final defAxisTitles = AxisTitles(sideTitles: SideTitles(showTitles: false));
+
+    for (final key in years.value.asMap().keys) {
+      spots.add(FlSpot(key.toDouble(), moneys.value[key]));
+    }
+
+    final lineChartBarData = LineChartBarData(
+      spots: spots,
+      isCurved: true,
+      isStrokeCapRound: true,
+      color: colorScheme.primary,
+      barWidth: 2.0.vp,
+      showingIndicators: showings.value,
+      dotData: const FlDotData(show: false),
+      belowBarData: BarAreaData(
+        show: true,
+        gradient: LinearGradient(
+          end: Alignment(0.0, 1.0),
+          begin: Alignment(0.0, -1.0),
+          colors: [
+            colorTweener.lerp(0.2)!.withValues(alpha: 0.15),
+            colorTweener.lerp(0.2)!.withValues(alpha: 0.05),
+            colorTweener.lerp(0.2)!.withValues(alpha: 0.0),
+          ],
+          stops: [0.05, 0.45, 0.75],
+        ),
+      ),
+      shadow: Shadow(
+        color: colorScheme.shadow.withValues(alpha: 0.15),
+        offset: Offset(0, 1),
+        blurRadius: 10,
+      ),
+    );
+
+    final showIndicators = showings.value.map((i) {
+      final lineBarSpot = LineBarSpot(lineChartBarData, 0, spots[i]);
+      return ShowingTooltipIndicators([lineBarSpot]);
+    });
+
+    return LineChart(
+      LineChartData(
+        minX: minX,
+        maxX: maxX,
+        minY: minY - (maxY - minY) * 1.8,
+        maxY: maxY + (maxY - minY) * 1.0,
+        gridData: FlGridData(show: false),
+        borderData: FlBorderData(show: false),
+        titlesData: FlTitlesData(
+          topTitles: defAxisTitles,
+          leftTitles: defAxisTitles,
+          rightTitles: defAxisTitles,
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              interval: 1,
+              showTitles: true,
+              reservedSize: 20.vp,
+              getTitlesWidget: (value, meta) {
+                var index = value.toInt();
+                var year = years.value[index];
+                var padding = EdgeInsets.zero;
+
+                if (value < (maxX - minX) / 2) {
+                  padding = EdgeInsets.only(left: 12.vp);
+                }
+
+                if (value > (maxX - minX) / 2) {
+                  padding = EdgeInsets.only(right: 12.vp);
+                }
+
+                if (value == minX) {
+                  padding = EdgeInsets.only(left: 30.vp);
+                }
+
+                if (value == maxX) {
+                  padding = EdgeInsets.only(right: 30.vp);
+                }
+
+                return SideTitleWidget(
+                  meta: meta,
+                  space: 1.0,
+                  angle: 0.0,
+                  child: Padding(
+                    padding: padding,
+                    child: Text(
+                      '$year',
+                      style: TextStyle(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 12.fp,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        lineBarsData: [lineChartBarData],
+        lineTouchData: LineTouchData(
+          enabled: true,
+          handleBuiltInTouches: false,
+          touchSpotThreshold: 20.vp,
+          getTouchedSpotIndicator: (barData, spotIndexes) {
+            final indicators = spotIndexes.map(
+              (index) => TouchedSpotIndicatorData(
+                FlLine(color: Colors.transparent, strokeWidth: 0),
+                FlDotData(
+                  show: true,
+                  getDotPainter: (spot, percent, barData, index) {
+                    return FlDotCirclePainter(
+                      radius: 6.vp,
+                      color: colorScheme.primary,
+                      strokeColor: colorScheme.surface,
+                      strokeWidth: 1.5.vp,
+                    );
+                  },
+                ),
+              ),
+            );
+            return indicators.toList();
+          },
+          touchTooltipData: LineTouchTooltipData(
+            fitInsideVertically: true,
+            fitInsideHorizontally: true,
+            tooltipBorderRadius: BorderRadius.circular(8.vp),
+            tooltipPadding: EdgeInsets.symmetric(
+              horizontal: 7.vp,
+              vertical: 4.vp,
+            ),
+            getTooltipItems: (List<LineBarSpot> lineBarsSpot) {
+              return lineBarsSpot.map((lineBarSpot) {
+                return LineTooltipItem(
+                  lineBarSpot.y.usd,
+                  TextStyle(
+                    color: colorScheme.onPrimary,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13.6.fp,
+                  ),
+                );
+              }).toList();
+            },
+            getTooltipColor: (_) {
+              return colorScheme.primary;
+            },
+          ),
+          touchCallback: (event, response) {
+            if (response?.lineBarSpots == null) {
+              return;
+            }
+
+            if (event is FlPanUpdateEvent) {
+              final spots = response!.lineBarSpots!;
+              final index = spots.first.spotIndex;
+              showings.value = [index];
+            }
+
+            if (event is FlTapDownEvent) {
+              final spots = response!.lineBarSpots!;
+              final index = spots.first.spotIndex;
+              showings.value = [index];
+            }
+
+            if (event is FlPanDownEvent) {
+              final spots = response!.lineBarSpots!;
+              final index = spots.first.spotIndex;
+              showings.value = [index];
+            }
+          },
+        ),
+        showingTooltipIndicators: [...showIndicators],
+      ),
+    );
+  }
+}

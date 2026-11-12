@@ -1,0 +1,262 @@
+import 'dart:math';
+import 'package:get/get.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+export 'package:dompet/pages/logger/controller.dart';
+import 'package:dompet/pages/logger/controller.dart';
+import 'package:dompet/routes/navigator.dart';
+import 'package:dompet/extension/size.dart';
+
+class PageLogger extends GetView<PageLoggerController> {
+  const PageLogger({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      const physics = NeverScrollableScrollPhysics();
+      final mediaPadding = controller.mediaPadding;
+      final mediaTopBar = controller.mediaTopBar;
+      final isShadow = controller.isShadow;
+
+      final height = max(40.vp, mediaTopBar.value);
+      final offset = max(mediaPadding.value.top, 20.vp);
+
+      return Scaffold(
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            NestedScrollView(
+              physics: physics,
+              headerSliverBuilder: (context, isScrolled) {
+                return [
+                  SliverOverlapAbsorber(
+                    handle: NestedScrollView.sliverOverlapAbsorberHandleFor(
+                      context,
+                    ),
+                    sliver: SliverAppBar(
+                      pinned: true,
+                      elevation: 0.0,
+                      expandedHeight: height,
+                      collapsedHeight: height,
+                      scrolledUnderElevation: 0.0,
+                      automaticallyImplyLeading: false,
+                      flexibleSpace: Obx(() {
+                        List<BoxShadow>? boxShadow;
+
+                        if (isShadow.value) {
+                          boxShadow = [
+                            BoxShadow(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.shadow.withValues(alpha: 0.05),
+                              offset: const Offset(0, 1.2),
+                              spreadRadius: 0,
+                              blurRadius: 10,
+                            ),
+                          ];
+                        }
+
+                        return Container(
+                          constraints: const BoxConstraints.expand(),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surface,
+                            boxShadow: boxShadow,
+                          ),
+                          padding: EdgeInsets.only(top: offset),
+                          child: buildTitle(context),
+                        );
+                      }),
+                    ),
+                  ),
+                ];
+              },
+              body: Builder(
+                builder: (BuildContext context) {
+                  return CustomScrollView(
+                    physics: physics,
+                    slivers: [
+                      SliverOverlapInjector(
+                        handle: NestedScrollView.sliverOverlapAbsorberHandleFor(
+                          context,
+                        ),
+                      ),
+                      SliverList(
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          return Obx(
+                            () => Container(
+                              width: 100.vw,
+                              height: 100.vh - height - offset,
+                              alignment: Alignment.center,
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  buildContent(context),
+                                  buildLoading(context),
+                                ],
+                              ),
+                            ),
+                          );
+                        }, childCount: 1),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            buildBack(context),
+          ],
+        ),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        resizeToAvoidBottomInset: false,
+      );
+    });
+  }
+
+  Widget buildBack(BuildContext context) {
+    final mediaTopBar = controller.mediaTopBar.value;
+    final mediaPadding = controller.mediaPadding.value;
+    final height = max(40.vp, mediaTopBar);
+
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: Container(
+          width: 680.wmax,
+          height: height,
+          margin: EdgeInsets.only(
+            top: max(mediaPadding.top, 20.vp),
+            left: 20.vp,
+          ),
+          padding: EdgeInsets.only(
+            top: (height - 36.vp) / 2,
+            bottom: (height - 36.vp) / 2,
+          ),
+          child: Row(
+            children: [
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => GetNavigate.back(),
+                child: Image(
+                  image: const AssetImage('lib/assets/images/auth/back.png'),
+                  width: 36.vp,
+                  height: 36.vp,
+                  fit: BoxFit.fill,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildTitle(BuildContext context) {
+    return Container(
+      alignment: Alignment.center,
+      constraints: const BoxConstraints.expand(),
+      padding: EdgeInsets.only(left: 32.vp, right: 32.vp),
+      child: Text(
+        'Run Logger'.tr,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 3,
+          fontSize: 20.fp,
+          height: 1,
+        ),
+      ),
+    );
+  }
+
+  Widget buildContent(BuildContext context) {
+    return Obx(() {
+      final mediaPadding = controller.mediaPadding;
+      final mediaTopBar = controller.mediaTopBar;
+      final mediaTop = mediaPadding.value.top;
+
+      final header = max(40.vp, mediaTopBar.value);
+      final offset = max(mediaTop, 20.vp);
+      final height = 100.vh - offset - header;
+
+      return SizedBox(
+        width: 640.wmax,
+        height: height,
+        child: InteractiveViewer(
+          minScale: 1.0,
+          maxScale: 5.0,
+          constrained: false,
+          child: Container(
+            padding: EdgeInsets.only(
+              top: 5.vp,
+              left: 5.vp,
+              right: 5.vp,
+              bottom: 20.vp,
+            ),
+            child: TextSelectionTheme(
+              data: TextSelectionThemeData(
+                selectionColor: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.28),
+                selectionHandleColor: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.28),
+              ),
+              child: SelectableText(
+                controller.string.value,
+                style: GoogleFonts.robotoMono(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w400,
+                  fontSize: 11.fp,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget buildLoading(BuildContext context) {
+    return Obx(
+      () => Positioned(
+        child: Offstage(
+          offstage: !controller.loading.value,
+          child: Container(
+            constraints: const BoxConstraints.expand(),
+            color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    strokeWidth: 3.2,
+                    color: Theme.of(context).colorScheme.primary,
+                    semanticsValue: 'Loading logs, please wait...'.tr,
+                  ),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(30, 20, 30, 80),
+                    child: Text(
+                      'Loading logs, please wait...'.tr,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.5,
+                        fontSize: 14.fp,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: double.infinity, height: 80),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

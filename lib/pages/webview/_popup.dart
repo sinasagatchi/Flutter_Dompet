@@ -1,0 +1,386 @@
+import 'dart:io';
+import 'dart:math';
+import 'package:get/get.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:dompet/pages/webview/controller.dart';
+import 'package:dompet/configure/fluttertoast.dart';
+import 'package:dompet/configure/share_plus.dart';
+import 'package:dompet/routes/navigator.dart';
+import 'package:dompet/extension/size.dart';
+
+class PageWebviewPopup extends StatefulWidget {
+  const PageWebviewPopup({
+    required this.controller,
+    required this.tag,
+    super.key,
+  });
+
+  final PageWebviewController controller;
+  final String tag;
+
+  @override
+  State<PageWebviewPopup> createState() => PageWebviewPopupState();
+}
+
+typedef SingleTicker = SingleTickerProviderStateMixin<PageWebviewPopup>;
+
+class PageWebviewPopupState extends State<PageWebviewPopup> with SingleTicker {
+  late AnimationController animationController;
+  late PageWebviewController controller;
+
+  late Animation<double> animation;
+  late Rx<EdgeInsets> mediaPadding;
+  late Rx<double> mediaHeight;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    setState(() {
+      controller = widget.controller;
+      mediaHeight = widget.controller.mediaQueryController.height;
+      mediaPadding = widget.controller.mediaQueryController.viewPadding;
+    });
+  }
+
+  @override
+  initState() {
+    super.initState();
+    controller = widget.controller;
+    mediaHeight = widget.controller.mediaQueryController.height;
+    mediaPadding = widget.controller.mediaQueryController.viewPadding;
+
+    animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    animation = Tween(begin: 0.0, end: 1.0).animate(animationController);
+
+    animation.addListener(() => setState(() => {}));
+
+    animation.addStatusListener((status) {
+      if (status == AnimationStatus.dismissed) {
+        controller.popuping(false);
+      }
+    });
+
+    animationController.forward();
+  }
+
+  @override
+  dispose() {
+    super.dispose();
+    animationController.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: Obx(() {
+        if (mediaHeight.value <= 350.vp) {
+          return const SizedBox.shrink();
+        }
+
+        return Stack(
+          fit: StackFit.expand,
+          children: [opacityLayer(context), controlPanel(context)],
+        );
+      }),
+    );
+  }
+
+  // layer
+  Widget opacityLayer(BuildContext context) {
+    return Opacity(
+      opacity: animation.value,
+      child: GestureDetector(
+        child: Container(
+          color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.47),
+          constraints: const BoxConstraints.expand(),
+        ),
+        onTap: () => animationController.reverse(),
+      ),
+    );
+  }
+
+  // panel
+  Widget controlPanel(BuildContext context) {
+    final panelList = [
+      'back',
+      'clear',
+      'refresh',
+      'browser',
+      'debug',
+      'share',
+      'link',
+    ];
+
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: (animation.value - 1) * 420,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.all(Radius.circular(15.vp)),
+          color: Theme.of(context).colorScheme.surface,
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(15.vp),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(left: 8.vp, right: 8.vp),
+                    child: Text(
+                      'Webview_Settings'.tr,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        letterSpacing: max(1.2.vp, 1.2),
+                        decoration: TextDecoration.none,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16.fp,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                height: .5,
+                margin: EdgeInsets.symmetric(vertical: 15.vp),
+                color: Theme.of(context).colorScheme.outline,
+              ),
+              Container(
+                constraints: BoxConstraints(minHeight: min(150.vp, 30.vh)),
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  itemCount: panelList.length,
+                  padding: EdgeInsets.all(3.vp),
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 66.vp,
+                    crossAxisSpacing: 15.vp,
+                    mainAxisSpacing: 15.vp,
+                    childAspectRatio: 0.60,
+                  ),
+                  itemBuilder: (context, index) {
+                    return controlPlate(context, panelList[index]);
+                  },
+                ),
+              ),
+              Container(
+                height: .5,
+                margin: EdgeInsets.symmetric(vertical: 15.vp),
+                color: Theme.of(context).colorScheme.outline,
+              ),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  padding: EdgeInsets.only(
+                    top: 5,
+                    left: 25,
+                    right: 25,
+                    bottom: max(20, mediaPadding.value.bottom),
+                  ),
+                  child: Align(
+                    child: Text(
+                      'System_Cancel'.tr,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.secondary,
+                        letterSpacing: max(1.2.vp, 1.2),
+                        decoration: TextDecoration.none,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16.fp,
+                      ),
+                    ),
+                  ),
+                ),
+                onTap: () => animationController.reverse(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // plate
+  Widget controlPlate(BuildContext context, String type) {
+    var image = '';
+    var title = '';
+
+    switch (type) {
+      case 'back':
+        image = 'lib/assets/webview/home.png';
+        title = 'Webview_Back_App'.tr;
+        break;
+
+      case 'clear':
+        image = 'lib/assets/webview/clear.png';
+        title = 'Webview_Clear_Cache'.tr;
+        break;
+
+      case 'refresh':
+        image = 'lib/assets/webview/refresh.png';
+        title = 'Webview_Refresh_Page'.tr;
+        break;
+
+      case 'browser':
+        image = 'lib/assets/webview/browser.png';
+        title = 'Webview_Open_Browser'.tr;
+        break;
+
+      case 'debug':
+        image = 'lib/assets/webview/debug.png';
+        title = 'Webview_Turn_Debug'.tr;
+        break;
+
+      case 'share':
+        image = 'lib/assets/webview/share.png';
+        title = 'Webview_Share_Website'.tr;
+        break;
+
+      case 'link':
+        image = 'lib/assets/webview/link.png';
+        title = 'Webview_Copy_Link'.tr;
+        break;
+    }
+
+    return GestureDetector(
+      child: SizedBox(
+        width: 60.vp,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 56.vp,
+              height: 56.vp,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.all(Radius.circular(15.vp)),
+                color: Theme.of(context).colorScheme.surface,
+              ),
+              child: Image(
+                width: 30.vp,
+                height: 30.vp,
+                image: AssetImage(image),
+                fit: BoxFit.fill,
+              ),
+            ),
+            Container(
+              width: 56.vp,
+              alignment: Alignment.center,
+              padding: EdgeInsets.only(top: 9.vp),
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  overflow: TextOverflow.ellipsis,
+                  decoration: TextDecoration.none,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 10.fp,
+                  height: 1.1,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+              ),
+            ),
+          ],
+        ),
+      ),
+      onTap: () async {
+        if (await trigger(context, type)) {
+          animationController.reverse();
+        }
+      },
+    );
+  }
+
+  // trigger
+  Future<bool> trigger(BuildContext context, String type) async {
+    if (type == 'back') {
+      await GetNavigate.until((route) => route.name != GetRoutes.webview);
+      return true;
+    }
+
+    if (type == 'clear') {
+      await InAppWebViewController.clearAllCache(includeDiskFiles: true);
+
+      if (!Platform.isIOS && !Platform.isMacOS) {
+        await controller.webviewController?.reload();
+        await controller.webviewController?.scrollTo(x: 0, y: 0);
+      }
+
+      if (Platform.isIOS || Platform.isMacOS) {
+        await controller.webviewController?.reloadFromOrigin();
+        await controller.webviewController?.scrollTo(x: 0, y: 0);
+      }
+
+      return true;
+    }
+
+    if (type == 'refresh') {
+      await controller.webviewController?.reload();
+      await controller.webviewController?.scrollTo(x: 0, y: 0);
+      return true;
+    }
+
+    if (type == 'browser') {
+      final url = await controller.webviewController?.getUrl();
+
+      if (url != null && await canLaunchUrl(url)) {
+        launchUrl(url, mode: LaunchMode.externalApplication);
+        return true;
+      }
+    }
+
+    if (type == 'debug') {
+      const event = 'CallOpenVConsoleDebug';
+      const source = 'window.dispatchEvent(new CustomEvent("$event"));';
+      await controller.webviewController?.evaluateJavascript(source: source);
+      return true;
+    }
+
+    if (type == 'share') {
+      final url = await controller.webviewController?.getUrl();
+
+      if (url != null) {
+        Sharer.shareUri(url);
+        return true;
+      }
+    }
+
+    if (type == 'link') {
+      final url = await controller.webviewController?.getUrl();
+
+      if (url != null && url.toString().isNotEmpty) {
+        final clipboard = ClipboardData(text: url.toString());
+        final future = Clipboard.setData(clipboard);
+
+        future.then((_) {
+          Toaster.success(
+            message: 'Webview_Copy_Successful'.tr,
+            duration: 1.5.seconds,
+          );
+        });
+
+        return true;
+      }
+    }
+
+    return false;
+  }
+}
