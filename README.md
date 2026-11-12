@@ -2,7 +2,7 @@
 
 <p align="center">
   <img
-    src="assets/images/final.png"
+    src="assets/images/final.jpg"
     alt="Dompet App Design"
     width="99%"
   />
